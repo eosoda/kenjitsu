@@ -18,8 +18,8 @@ importers:
         specifier: ^8.3.0
         version: 8.3.0
       '@middlegear/kenjitsu-extensions':
-        specifier: 2026.8.2-1216
-        version: 2026.8.2-1216
+        specifier: file:../kenjitsu-extensions
+        version: kenjitsu-extensions@file:../kenjitsu-extensions
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2
@@ -277,9 +277,6 @@ packages:
   '@lukeed/ms@2.0.2':
     resolution: {integrity: sha512-9I2Zn6+NJLfaGoz9jN3lpwDgAYvfGeNYdbAIjJOqzs4Tpc+VU3Jqq4IofSUBKajiDS8k9fZIg18/z13mpk1bsA==}
     engines: {node: '>=8'}
-
-  '@middlegear/kenjitsu-extensions@2026.8.2-1216':
-    resolution: {integrity: sha512-OJpXdtT5O2zl5W2K2YJUXMA98dkVMizCp2PQgHwAR1ho3EMfH6Apt7mEm9E3vprckk+6xx6WCEmh5j6us+/dBA==, tarball: https://npm.pkg.github.com/download/@middlegear/kenjitsu-extensions/2026.8.2-1216/6de4b47e1546560c2834f192c243246bd4f7edec}
 
   '@octokit/auth-token@6.0.0':
     resolution: {integrity: sha512-P4YJBPdPSpWTQ1NU4XYdvHvXJJDxM6YwpS0FZHRgP7YFkdVxsWcpWGy/NVqlAA7PcPCnMacXlRm1y2PFZRWL/w==}
@@ -1073,6 +1070,9 @@ packages:
 
   jsonfile@6.2.1:
     resolution: {integrity: sha512-zwOTdL3rFQ/lRdBnntKVOX6k5cKJwEc1HdilT71BWEu7J41gXIB2MRp+vxduPSwZJPWBxEzv4yH1wYLJGUHX4Q==}
+
+  kenjitsu-extensions@file:../kenjitsu-extensions:
+    resolution: {directory: ../kenjitsu-extensions, type: directory}
 
   light-my-request@6.6.0:
     resolution: {integrity: sha512-CHYbu8RtboSIoVsHZ6Ye4cj4Aw/yg2oAFimlF7mNvfDV192LR7nDiKtSIfCuLT7KokPSTn/9kfVLm5OGN0A28A==}
@@ -2042,14 +2042,6 @@ snapshots:
 
   '@lukeed/ms@2.0.2': {}
 
-  '@middlegear/kenjitsu-extensions@2026.8.2-1216':
-    dependencies:
-      cheerio: 1.2.0
-      fastest-levenshtein: 1.0.16
-      impit: 0.14.3
-      p-queue: 9.3.3
-      tough-cookie: 6.0.2
-
   '@octokit/auth-token@6.0.0': {}
 
   '@octokit/core@7.0.6':
@@ -2904,6 +2896,14 @@ snapshots:
       universalify: 2.0.1
     optionalDependencies:
       graceful-fs: 4.2.11
+
+  kenjitsu-extensions@file:../kenjitsu-extensions:
+    dependencies:
+      cheerio: 1.2.0
+      fastest-levenshtein: 1.0.16
+      impit: 0.14.3
+      p-queue: 9.3.3
+      tough-cookie: 6.0.2
 
   light-my-request@6.6.0:
     dependencies:

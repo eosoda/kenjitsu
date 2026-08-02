@@ -31,6 +31,7 @@ export interface FastifyQuery {
   quality?: string;
   hls?: string;
   timezone?: string;
+  episodeId?: string;
 }
 
 export const IAMetaFormatArr = ['TV', 'MOVIE', 'SPECIAL', 'OVA', 'ONA', 'MUSIC', 'MANGA'] as const;
