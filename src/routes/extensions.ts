@@ -3,6 +3,9 @@ import { animeExtensionRegistry } from '../registry/anime.js';
 import type { FastifyParams, FastifyQuery } from '../utils/types.js';
 
 type ExtensionParams = FastifyParams & { extensionId?: string; animeId?: string };
+type AnimeParserWithEpisodes = {
+  fetchEpisodes?: (animeId: string) => Promise<unknown>;
+};
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -65,7 +68,20 @@ export default async function AnimeExtensionRoutes(fastify: FastifyInstance) {
       if (!request.params.animeId) return reply.status(400).send({ error: "Missing required path parameter: 'animeId'" });
 
       try {
-        const result = await definition.create().fetchAnimeInfo(request.params.animeId);
+        const parser = definition.create();
+        const result = await parser.fetchAnimeInfo(request.params.animeId);
+        if (isRecord(result) && !Array.isArray(result.providerEpisodes)) {
+          const fetchEpisodes = (parser as AnimeParserWithEpisodes).fetchEpisodes;
+          if (fetchEpisodes) {
+            try {
+              const episodesResult = await fetchEpisodes.call(parser, request.params.animeId);
+              const providerEpisodes = isRecord(episodesResult) && Array.isArray(episodesResult.data) ? episodesResult.data : [];
+              return sendExtensionResult(reply, request.params.extensionId!, { ...result, providerEpisodes });
+            } catch (episodesError) {
+              request.log.warn({ error: episodesError, provider: request.params.extensionId }, 'Anime extension episode lookup failed');
+            }
+          }
+        }
         return sendExtensionResult(reply, request.params.extensionId!, result);
       } catch (error) {
         request.log.error({ error, provider: request.params.extensionId }, 'Anime extension info failed');

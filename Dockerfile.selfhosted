@@ -1,0 +1,58 @@
+# Self-hosted image for the local sibling forks:
+#   ../kenjitsu
+#   ../kenjitsu-extensions
+# Build with the parent `projetos` directory as context.
+
+FROM node:24-alpine AS extensions-builder
+
+WORKDIR /workspace/kenjitsu-extensions
+
+COPY kenjitsu-extensions/package.json ./package.json
+COPY kenjitsu-extensions/tsconfig.json ./tsconfig.json
+COPY kenjitsu-extensions/tsup.config.ts ./tsup.config.ts
+COPY kenjitsu-extensions/src ./src
+
+RUN npm install --ignore-scripts --install-links && npm run build && npm prune --omit=dev
+
+FROM node:24-alpine AS kenjitsu-builder
+
+WORKDIR /workspace/kenjitsu
+
+COPY kenjitsu/package.json ./package.json
+COPY kenjitsu/tsconfig.json ./tsconfig.json
+COPY --from=extensions-builder /workspace/kenjitsu-extensions/package.json /workspace/kenjitsu-extensions/package.json
+COPY --from=extensions-builder /workspace/kenjitsu-extensions/dist /workspace/kenjitsu-extensions/dist
+COPY --from=extensions-builder /workspace/kenjitsu-extensions/node_modules /workspace/kenjitsu-extensions/node_modules
+
+RUN npm install --ignore-scripts --install-links
+
+COPY kenjitsu/src ./src
+COPY kenjitsu/public ./public
+
+RUN npm run build
+RUN npm prune --omit=dev && npm cache clean --force
+
+FROM node:24-alpine AS runtime
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOST=0.0.0.0
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+COPY --from=kenjitsu-builder --chown=appuser:appgroup /workspace/kenjitsu/dist ./dist
+COPY --from=kenjitsu-builder --chown=appuser:appgroup /workspace/kenjitsu/public ./public
+COPY --from=kenjitsu-builder --chown=appuser:appgroup /workspace/kenjitsu/node_modules ./node_modules
+COPY --from=kenjitsu-builder --chown=appuser:appgroup /workspace/kenjitsu/package*.json ./
+RUN rm -rf ./node_modules/@middlegear/kenjitsu-extensions
+COPY --from=extensions-builder --chown=appuser:appgroup /workspace/kenjitsu-extensions/package.json ./node_modules/@middlegear/kenjitsu-extensions/package.json
+COPY --from=extensions-builder --chown=appuser:appgroup /workspace/kenjitsu-extensions/dist ./node_modules/@middlegear/kenjitsu-extensions/dist
+COPY --from=extensions-builder --chown=appuser:appgroup /workspace/kenjitsu-extensions/node_modules ./node_modules/@middlegear/kenjitsu-extensions/node_modules
+
+USER appuser
+
+EXPOSE 3000
+
+CMD ["node", "dist/server.js"]

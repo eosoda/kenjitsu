@@ -5,7 +5,7 @@ const port = Number(process.env.REDIS_PORT);
 const host = process.env.REDIS_HOST;
 const password = process.env.REDIS_PASSWORD;
 
-const isRedisEnabled = Boolean(host && password);
+const isRedisEnabled = Boolean(host && port && password);
 
 let redisInstance: Redis | null = null;
 
@@ -16,7 +16,7 @@ function initRedis() {
       host,
       port,
       password,
-      tls: {},
+      ...(process.env.REDIS_TLS === 'true' ? { tls: {} } : {}),
       lazyConnect: true,
       maxRetriesPerRequest: 3,
       enableReadyCheck: true,
