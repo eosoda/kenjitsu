@@ -32,6 +32,23 @@ Complete API reference including endpoints, request parameters, and response sch
 
 **[kenjitsu-docs.vercel.app](https://kenjitsu-docs.vercel.app)**
 
+## AniStream self-hosted fork
+
+The AniStream uses this fork as its local Kenjitsu API. `Dockerfile.selfhosted` builds Kenjitsu together with the sibling `../kenjitsu-extensions` fork; the root `docker-compose.yml` in AniStream exposes the API at `http://localhost:3001`.
+
+Useful local endpoints:
+
+```text
+GET /api/health
+GET /api/extensions/health
+GET /api/anilist/anime/:id/mappings?provider=:extensionId
+GET /api/extensions/:extensionId/search?q=:query
+GET /api/extensions/:extensionId/anime/:providerId
+GET /api/extensions/:extensionId/sources?episodeId=:episodeId
+```
+
+Fork updates follow `upstream` → local branch → build and smoke tests → `main`. The official Kenjitsu repository is not changed by the self-hosted workflow.
+
 ## Disclaimer
 
 > This project is for **educational purposes only**.
