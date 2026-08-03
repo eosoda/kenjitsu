@@ -20,6 +20,7 @@ import AnikotoRoutes from './routes/anime/anikoto.js';
 import AniDBRoutes from './routes/anime/anidb.js';
 import AnimeHeavenRoutes from './routes/anime/animeheaven.js';
 import AniBDRoutes from './routes/anime/anibd.js';
+import AnimeExtensionRoutes from './routes/extensions.js';
 
 events.defaultMaxListeners = 25;
 
@@ -91,6 +92,7 @@ async function FastifyApp() {
   await app.register(AnikotoRoutes, { prefix: '/api/anikoto' });
   await app.register(AniDBRoutes, { prefix: '/api/anidb' });
   await app.register(AniBDRoutes, { prefix: '/api/anibd' });
+  await app.register(AnimeExtensionRoutes, { prefix: '/api/extensions' });
   await app.register(AnizoneRoutes, { prefix: '/api/anizone' });
   await app.register(AnimeHeavenRoutes, { prefix: '/api/animeheaven' });
   await app.register(TheMovieDatabaseRoutes, { prefix: '/api/tmdb' });
