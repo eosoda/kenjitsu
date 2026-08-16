@@ -1,0 +1,94 @@
+name: Publish self-hosted image
+
+on:
+  workflow_dispatch:
+    inputs:
+      KENJITSU_REF:
+        description: 'Branch, tag or commit SHA of eosoda/kenjitsu'
+        required: true
+        default: 'main'
+      EXTENSIONS_REF:
+        description: 'Branch, tag or commit SHA of eosoda/kenjitsu-extensions'
+        required: true
+        default: 'main'
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_NAME: ghcr.io/eosoda/kenjitsu-selfhosted
+
+jobs:
+  build-and-publish:
+    name: Build, smoke test and publish immutable image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Kenjitsu
+        uses: actions/checkout@v4
+        with:
+          repository: eosoda/kenjitsu
+          ref: ${{ inputs.KENJITSU_REF }}
+          path: kenjitsu
+          token: ${{ secrets.CROSS_REPO_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Checkout Kenjitsu extensions
+        uses: actions/checkout@v4
+        with:
+          repository: eosoda/kenjitsu-extensions
+          ref: ${{ inputs.EXTENSIONS_REF }}
+          path: kenjitsu-extensions
+          token: ${{ secrets.CROSS_REPO_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Resolve immutable source references
+        id: refs
+        shell: bash
+        run: |
+          echo "kenjitsu_sha=$(git -C kenjitsu rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "extensions_sha=$(git -C kenjitsu-extensions rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: kenjitsu/Dockerfile.selfhosted
+          load: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:kenjitsu-${{ steps.refs.outputs.kenjitsu_sha }}-extensions-${{ steps.refs.outputs.extensions_sha }}
+
+      - name: Run image health check
+        shell: bash
+        env:
+          IMAGE_TAG: ${{ env.IMAGE_NAME }}:kenjitsu-${{ steps.refs.outputs.kenjitsu_sha }}-extensions-${{ steps.refs.outputs.extensions_sha }}
+        run: |
+          set -Eeuo pipefail
+          docker run --detach --rm --name kenjitsu-ci \
+            --env API_KEY=ci-health-check-key \
+            --env PORT=3000 \
+            --publish 127.0.0.1:39000:3000 \
+            "$IMAGE_TAG"
+          cleanup() { docker logs kenjitsu-ci || true; docker stop kenjitsu-ci || true; }
+          trap cleanup EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error \
+              -H 'x-api-key: ci-health-check-key' \
+              http://127.0.0.1:39000/api/extensions/health; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo 'Kenjitsu did not become healthy in time.' >&2
+          exit 1
+
+      - name: Push immutable image
+        shell: bash
+        env:
+          IMAGE_TAG: ${{ env.IMAGE_NAME }}:kenjitsu-${{ steps.refs.outputs.kenjitsu_sha }}-extensions-${{ steps.refs.outputs.extensions_sha }}
+        run: docker push "$IMAGE_TAG"
